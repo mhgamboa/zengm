@@ -66,6 +66,9 @@
 	}
 	.league-top-bar {
 		margin-left: 161px;
+		&::-webkit-scrollbar {
+			height: 0px;
+		}
 	}
 	.title-bar {
 		// -17 for left margin in .title-bar
