@@ -1,13 +1,6 @@
 import classNames from "classnames";
 import { m, AnimatePresence } from "framer-motion";
-import {
-	memo,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-	ReactDOM,
-} from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { useLocalShallow, safeLocalStorage } from "../util";
 import ScoreBox from "./ScoreBox";
 
