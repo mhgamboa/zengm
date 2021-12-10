@@ -62,7 +62,7 @@ const LeagueMenu = <Value extends string>({
 		<>
 			<div className="d-flex">
 				<div className="flex-grow-1">
-					<label htmlFor="new-league-season" className="mr-2">
+					<label className="form-label me-2" htmlFor="new-league-season">
 						Season
 					</label>
 					<NextPrevButtons
@@ -78,7 +78,7 @@ const LeagueMenu = <Value extends string>({
 							<button
 								key={key}
 								type="button"
-								className="btn btn-link border-0 p-0 mb-1 ml-2"
+								className="btn btn-link border-0 p-0 mb-1 ms-2"
 								style={quickValuesStyle}
 								onClick={() => {
 									handleNewValue(key, value2);
@@ -92,7 +92,7 @@ const LeagueMenu = <Value extends string>({
 			<div className="input-group mb-1">
 				<select
 					id="new-league-season"
-					className="form-control"
+					className="form-select"
 					value={value}
 					onChange={async event => {
 						await handleNewValue(
@@ -111,7 +111,7 @@ const LeagueMenu = <Value extends string>({
 				</select>
 				{value2 !== undefined && values2 && onNewValue2 ? (
 					<select
-						className="form-control"
+						className="form-select"
 						onChange={event => {
 							const value2 = parseInt(event.target.value);
 							onNewValue2(value2);

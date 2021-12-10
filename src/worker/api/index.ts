@@ -3113,6 +3113,78 @@ const updatePlayingTime = async (pid: number, ptModifier: number) => {
 	await toUI("realtimeUpdate", [["playerMovement"]]);
 };
 
+const updatePlayoffTeams = async (
+	teams: {
+		tid: number;
+		cid: number;
+		seed: number | undefined;
+	}[],
+) => {
+	const playoffSeries = await idb.cache.playoffSeries.get(g.get("season"));
+	if (playoffSeries) {
+		const { playIns, series } = playoffSeries;
+		const byConf = await season.getPlayoffsByConf(g.get("season"));
+
+		const findTeam = (seed: number, cid: number) => {
+			// If byConf, we need to find the seed in the same conference, cause multiple teams will have this seed. Otherwise, can just check seed.
+			const t = teams.find(t => seed === t.seed && (!byConf || cid === t.cid));
+
+			if (!t) {
+				throw new Error("Team not found");
+			}
+
+			return t;
+		};
+
+		const tidsPlayoffs = new Set();
+
+		const checkMatchups = (matchups: typeof series[0], playIn?: boolean) => {
+			for (const matchup of matchups) {
+				const home = findTeam(matchup.home.seed, matchup.home.cid);
+				matchup.home.tid = home.tid;
+				matchup.home.cid = home.cid;
+				if (!playIn) {
+					tidsPlayoffs.add(home.tid);
+				}
+				if (matchup.away && !matchup.away.pendingPlayIn) {
+					const away = findTeam(matchup.away.seed, matchup.away.cid);
+					matchup.away.tid = away.tid;
+					matchup.away.cid = away.cid;
+					if (!playIn) {
+						tidsPlayoffs.add(away.tid);
+					}
+				}
+			}
+		};
+
+		checkMatchups(series[0]);
+
+		if (playIns) {
+			checkMatchups(playIns.map(playIn => playIn.slice(0, 2)).flat());
+		}
+
+		await idb.cache.playoffSeries.put(playoffSeries);
+
+		// Update schedule, since games might have changed
+		await season.newSchedulePlayoffsDay();
+
+		// Update teamSeasons, since playoffRoundsWon might need to be updated
+		const teamSeasons = await idb.cache.teamSeasons.indexGetAll(
+			"teamSeasonsBySeasonTid",
+			[[g.get("season")], [g.get("season"), "Z"]],
+		);
+		for (const teamSeason of teamSeasons) {
+			const playoffRoundsWon = tidsPlayoffs.has(teamSeason.tid) ? 0 : -1;
+			if (playoffRoundsWon !== teamSeason.playoffRoundsWon) {
+				teamSeason.playoffRoundsWon = playoffRoundsWon;
+				await idb.cache.teamSeasons.put(teamSeason);
+			}
+		}
+
+		await toUI("realtimeUpdate", [["playoffs"]]);
+	}
+};
+
 const updateTeamInfo = async (
 	newTeams: {
 		tid: number;
@@ -3647,6 +3719,7 @@ export default {
 	updatePlayThroughInjuries,
 	updatePlayerWatch,
 	updatePlayingTime,
+	updatePlayoffTeams,
 	updateTeamInfo,
 	updateTrade,
 	upsertCustomizedPlayer,
